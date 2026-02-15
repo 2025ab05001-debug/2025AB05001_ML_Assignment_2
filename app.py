@@ -1,19 +1,12 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, matthews_corrcoef, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 st.title("ML Assignment 2 - Classification App")
-
-with open("test.csv", "rb") as f:
-    st.download_button(
-        label="Download Sample Test CSV",
-        data=f,
-        file_name="test.csv",
-        mime="text/csv"
-    )
 
 models = {
     "Logistic Regression": joblib.load("model/logistic_regression.pkl"),
@@ -21,8 +14,12 @@ models = {
     "KNN": joblib.load("model/knn.pkl"),
     "Naive Bayes": joblib.load("model/naive_bayes.pkl"),
     "Random Forest": joblib.load("model/random_forest.pkl"),
-    "XGBoost": joblib.load("model/xgboost.pkl"),
+    "XGBoost": joblib.load("model/xgboost.pkl")
 }
+
+if os.path.exists("test.csv"):
+    with open("test.csv", "rb") as f:
+        st.download_button("Download sample test CSV", f, file_name="test.csv", mime="text/csv")
 
 uploaded_file = st.file_uploader("Upload CSV file (test data only)", type=["csv"])
 
@@ -30,9 +27,12 @@ if uploaded_file:
     df = pd.read_csv(uploaded_file)
     st.write("Uploaded Data Preview:", df.head())
 
-    target_col = st.selectbox("Select target column", df.columns)
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
+    if "target" not in df.columns:
+        st.error("Uploaded CSV must contain a 'target' column")
+        st.stop()
+
+    X = df.drop(columns=["target"])
+    y = df["target"]
 
     model_name = st.selectbox("Choose Model", list(models.keys()))
     model = models[model_name]
